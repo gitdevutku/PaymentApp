@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Button,
   ActivityIndicator,
   Alert,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import Header from '../components/Header';
 
 // Replace this with your actual provider URL
 const providerUrl = 'https://chain.scimatic.net';
+const turkishLiraTokenAddress = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1';
 
 const TurkishLira = ({route, navigation}) => {
   const {tokenName} = route.params || {tokenName: 'Turkish Lira'};
@@ -24,9 +24,21 @@ const TurkishLira = ({route, navigation}) => {
     const fetchBalance = async () => {
       try {
         const provider = new ethers.JsonRpcProvider(providerUrl);
-        const address = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1'; // Replace with the actual address
-        const balanceInWei = await provider.getBalance(address);
-        const balanceInEth = ethers.formatUnits(balanceInWei, 18); // Change decimal places if needed
+        const address = '0xC3b725Efd4Fb95325281B97baF9FCCC9F94D9672'; // Replace with the actual address
+
+        // Instantiate the contract within the function
+        const turkishLiraContract = new ethers.Contract(
+          turkishLiraTokenAddress,
+          [
+            // ERC-20 ABI to interact with the balanceOf function
+            'function balanceOf(address owner) view returns (uint256)',
+          ],
+          provider,
+        );
+
+        // Fetch the Turkish Lira token balance
+        const tryBalanceInWei = await turkishLiraContract.balanceOf(address);
+        const balanceInEth = ethers.formatUnits(tryBalanceInWei, 18);
         setBalance(balanceInEth);
       } catch (error) {
         console.error('Error fetching balance:', error.message);
@@ -42,6 +54,7 @@ const TurkishLira = ({route, navigation}) => {
   const handleTransaction = () => {
     navigation.navigate('QrSendTurkishLira');
   };
+
   const handleReceive = () => {
     navigation.navigate('QrReceiveTurkishLira');
   };
@@ -51,13 +64,14 @@ const TurkishLira = ({route, navigation}) => {
       <Header
         title={'Turkish Lira'}
         icon={require('../images/back.png')}
-        onPress={() => navigation.goBack()}></Header>
+        onPress={() => navigation.goBack()}
+      />
       <View style={styles.section}>
         <Text style={styles.header}>{tokenName} Token Balance</Text>
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : (
-          <Text style={styles.balanceText}>{balance} TRY </Text>
+          <Text style={styles.balanceText}>{balance} TRY</Text>
         )}
         <TouchableOpacity
           style={styles.transactionButton}

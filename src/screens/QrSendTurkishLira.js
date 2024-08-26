@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -6,37 +6,46 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import QRCodeScanner from 'react-native-qrcode-scanner';
 import {ethers} from 'ethers';
 import Header from '../components/Header';
 
-const providerUrl = 'https://chain.scimatic.net'; // Update this
+// Hardcoded token details
+const TOKEN_ADDRESS = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1'; // Replace with actual Turkish Lira Token contract address
+const TOKEN_SYMBOL = 'TRY'; // Replace with actual symbol if needed
 
 const QrSendTurkishLira = ({navigation}) => {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [qrCodeData, setQRCodeData] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // Generate QR Code for Payment
-  const generateQRCode = () => {
+  const validateInputs = () => {
     if (!ethers.isAddress(recipientAddress)) {
       Alert.alert('Invalid Address', 'Please enter a valid recipient address.');
-      return;
+      return false;
     }
 
     if (isNaN(amount) || parseFloat(amount) <= 0) {
       Alert.alert('Invalid Amount', 'Please enter a valid amount.');
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const generateQRCode = () => {
+    if (!validateInputs()) return;
 
     const paymentData = JSON.stringify({
       to: recipientAddress,
-      value: amount,
+      amount: amount,
+      tokenAddress: TOKEN_ADDRESS,
+      tokenSymbol: TOKEN_SYMBOL,
     });
+
     setQRCodeData(paymentData);
     setIsGeneratingQR(true);
   };
@@ -48,6 +57,7 @@ const QrSendTurkishLira = ({navigation}) => {
         icon={require('../images/back.png')}
         onPress={() => navigation.goBack()}
       />
+
       <View style={styles.section}>
         <TextInput
           style={styles.input}
@@ -56,27 +66,29 @@ const QrSendTurkishLira = ({navigation}) => {
           onChangeText={setRecipientAddress}
           autoCapitalize="none"
         />
+
         <TextInput
           style={styles.input}
-          placeholder="Amount (TRY)"
+          placeholder="Amount (TL)"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
         />
+
         <TouchableOpacity
           style={styles.button}
           onPress={generateQRCode}
-          disabled={loading}>
+          disabled={false}>
           <Text style={styles.buttonText}>Generate QR Code</Text>
         </TouchableOpacity>
+
         {isGeneratingQR && (
           <View style={styles.qrCodeContainer}>
             <Text style={styles.qrLabel}>Scan to Pay:</Text>
-            <QRCode value={qrCodeData} size={200} />
+            <View style={styles.qrCodeWrapper}>
+              <QRCode value={qrCodeData} size={200} />
+            </View>
           </View>
-        )}
-        {loading && (
-          <Text style={styles.loadingText}>Processing Payment...</Text>
         )}
       </View>
     </View>
@@ -120,15 +132,27 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
+  qrCodeWrapper: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    padding: 10,
+    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
   qrLabel: {
     fontSize: 18,
     marginBottom: 10,
     color: '#fff',
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: 'gray',
   },
 });
 
