@@ -9,6 +9,7 @@ import AboutAppScreen from './screens/About';
 import QrTxTurkishLira from './screens/QrSendTurkishLira';
 import QrReceiveTurkishLira from './screens/QrReceiveTurkishLira';
 import QrSendTurkishLira from './screens/QrSendTurkishLira';
+import Success from './screens/Success';
 
 const Stack = createStackNavigator();
 
@@ -49,6 +50,11 @@ const AppNavigator = () => {
         <Stack.Screen
           name="QrReceiveTurkishLira"
           component={QrReceiveTurkishLira}
+          options={{headerShown: false}} // Hide the header
+        />
+        <Stack.Screen
+          name="Success"
+          component={Success}
           options={{headerShown: false}} // Hide the header
         />
       </Stack.Navigator>

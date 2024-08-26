@@ -3,13 +3,14 @@ import {View, Text, StyleSheet, Alert} from 'react-native';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {ethers} from 'ethers';
 import erc20Abi from '../erc20.abi.json'; // Adjust the path to your ABI file
+import Header from '../components/Header';
 
 // Hardcoded token details
 const TOKEN_ADDRESS = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1'; // Replace with actual Turkish Lira Token contract address
 const PRIVATE_KEY =
   '0xe1119699c0f01f7e18a6653be970854396692a00b5d188ab2373ec5fc6157696'; // Replace with your private key (ensure this is securely stored and not hard-coded)
 
-const QrReceiveTurkishLira = () => {
+const QrReceiveTurkishLira = ({navigation}) => {
   const handleScan = async e => {
     try {
       const paymentData = JSON.parse(e.data);
@@ -39,7 +40,7 @@ const QrReceiveTurkishLira = () => {
       // Perform the token transfer
       const tx = await tokenContract.transfer(to, amountInUnits);
       await tx.wait();
-
+      navigation.navigate('Success');
       Alert.alert(
         'Success',
         `Successfully transferred ${amount} Turkish Lira Token to ${to}`,
@@ -51,6 +52,11 @@ const QrReceiveTurkishLira = () => {
 
   return (
     <View style={styles.container}>
+      <Header
+        title={'Scan the QR code'}
+        icon={require('../images/back.png')}
+        onPress={() => navigation.goBack()}
+      />
       <QRCodeScanner
         onRead={handleScan}
         topContent={
@@ -82,6 +88,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 21,
     color: 'red',
+    marginTop: 20,
   },
 });
 
