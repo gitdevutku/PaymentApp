@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,34 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import {ethers} from 'ethers';
 import Header from '../components/Header';
+import QRCodeScanner from 'react-native-qrcode-scanner';
+import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 
-// Hardcoded token details
 const TOKEN_ADDRESS = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1'; // Replace with actual Turkish Lira Token contract address
-const TOKEN_SYMBOL = 'TRY'; // Replace with actual symbol if needed
+const TOKEN_SYMBOL = 'TRY';
 
-const QrSendTurkishLira = ({navigation}) => {
-  const [recipientAddress, setRecipientAddress] = useState('');
-  const [amount, setAmount] = useState('');
+const QrSendTurkishLira = ({navigation, route}) => {
+  const {recipientAddress: initialRecipientAddress, amount: initialAmount} =
+    route.params || {};
+
+  const [recipientAddress, setRecipientAddress] = useState(
+    initialRecipientAddress || '',
+  );
+  const [amount, setAmount] = useState(initialAmount || '');
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [qrCodeData, setQRCodeData] = useState('');
+  const [isScanningQR, setIsScanningQR] = useState(false); // State for managing QR scanner visibility
+
+  useEffect(() => {
+    if (initialRecipientAddress && initialAmount) {
+      generateQRCode();
+    }
+  }, [initialRecipientAddress, initialAmount]);
 
   const validateInputs = () => {
     if (!ethers.isAddress(recipientAddress)) {
@@ -50,6 +64,12 @@ const QrSendTurkishLira = ({navigation}) => {
     setIsGeneratingQR(true);
   };
 
+  const onScanSuccess = e => {
+    // Assuming the scanned data contains the recipient's address in the format you need
+    setRecipientAddress(e.data);
+    setIsScanningQR(false); // Close the scanner after successful scan
+  };
+
   return (
     <View style={styles.container}>
       <Header
@@ -59,13 +79,22 @@ const QrSendTurkishLira = ({navigation}) => {
       />
 
       <View style={styles.section}>
-        <TextInput
-          style={styles.input}
-          placeholder="Recipient Address"
-          value={recipientAddress}
-          onChangeText={setRecipientAddress}
-          autoCapitalize="none"
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Recipient Address"
+            value={recipientAddress}
+            onChangeText={setRecipientAddress}
+            autoCapitalize="none"
+          />
+
+          {/* QR Code Scanner Icon Inside the TextInput */}
+          <TouchableOpacity
+            style={styles.qrIcon}
+            onPress={() => setIsScanningQR(true)}>
+            <FontAwesomeIcon icon="fa-sharp fa-light fa-qrcode" />
+          </TouchableOpacity>
+        </View>
 
         <TextInput
           style={styles.input}
@@ -78,7 +107,7 @@ const QrSendTurkishLira = ({navigation}) => {
         <TouchableOpacity
           style={styles.button}
           onPress={generateQRCode}
-          disabled={false}>
+          disabled={isGeneratingQR}>
           <Text style={styles.buttonText}>Generate QR Code</Text>
         </TouchableOpacity>
 
@@ -91,6 +120,21 @@ const QrSendTurkishLira = ({navigation}) => {
           </View>
         )}
       </View>
+
+      {/* QR Code Scanner Modal */}
+      <Modal visible={isScanningQR} animationType="slide">
+        <QRCodeScanner
+          onRead={onScanSuccess}
+          topContent={<Text style={styles.scannerText}>Scan the QR code</Text>}
+          bottomContent={
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setIsScanningQR(false)}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          }
+        />
+      </Modal>
     </View>
   );
 };
@@ -98,12 +142,16 @@ const QrSendTurkishLira = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#aeae',
+    backgroundColor: '#90EE90',
   },
   section: {
     marginTop: 200,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  inputContainer: {
+    width: '90%',
+    position: 'relative',
   },
   input: {
     height: 50,
@@ -115,11 +163,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 20,
   },
+  qrIcon: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+  },
   button: {
     backgroundColor: 'green',
     padding: 10,
     borderRadius: 10,
-    width: '80%',
+    width: '60%',
     alignItems: 'center',
     marginVertical: 10,
   },
@@ -153,6 +206,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
     color: '#fff',
+  },
+  scannerText: {
+    fontSize: 16,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 20,
   },
 });
 

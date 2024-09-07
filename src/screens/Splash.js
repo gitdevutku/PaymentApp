@@ -4,7 +4,7 @@ import React, {useEffect} from 'react';
 export default function Splash({navigation}) {
   useEffect(() => {
     setTimeout(() => {
-      navigation.navigate('Home');
+      navigation.navigate('Login');
     }, 3000);
   }, []);
   return (
@@ -22,12 +22,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#aeae',
+    backgroundColor: '#90EE90',
     borderRadius: 14,
   },
   logo: {
     width: 100,
     height: 100,
+    borderRadius: 40,
   },
   title: {
     fontSize: 20,

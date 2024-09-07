@@ -6,10 +6,12 @@ import TurkishLiraScreen from './screens/TurkishLira';
 import SciCoinScreen from './screens/SciCoin';
 import SettingsScreen from './screens/Settings';
 import AboutAppScreen from './screens/About';
-import QrTxTurkishLira from './screens/QrSendTurkishLira';
 import QrReceiveTurkishLira from './screens/QrReceiveTurkishLira';
 import QrSendTurkishLira from './screens/QrSendTurkishLira';
 import Success from './screens/Success';
+import Coffee from './screens/Coffee';
+import Splash from './screens/Splash';
+import LoginPage from './screens/Login';
 
 const Stack = createStackNavigator();
 
@@ -17,6 +19,16 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+        <Stack.Screen
+          name="Splash"
+          component={Splash}
+          options={{headerShown: false}} // Hide the header
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginPage}
+          options={{headerShown: false}} // Hide the header
+        />
         <Stack.Screen
           name="Home"
           component={Home}
@@ -55,6 +67,11 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Success"
           component={Success}
+          options={{headerShown: false}} // Hide the header
+        />
+        <Stack.Screen
+          name="Coffee"
+          component={Coffee}
           options={{headerShown: false}} // Hide the header
         />
       </Stack.Navigator>
