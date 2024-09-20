@@ -2,41 +2,17 @@ import React, {useState} from 'react';
 import {View, Text, StyleSheet, Alert, Modal, Pressable} from 'react-native';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {ethers} from 'ethers';
-import EncryptedStorage from 'react-native-encrypted-storage';
 import erc20Abi from '../erc20.abi.json'; // Adjust the path to your ABI file
 import Header from '../components/Header';
-import encst from '../utils/encst';
-import formatter from '../utils/dateUtils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const TOKEN_ADDRESS = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1'; // Replace with actual Turkish Lira Token contract address
+// Hardcoded SCI token details
+const TOKEN_ADDRESS = 'YOUR_SCI_TOKEN_ADDRESS'; // Replace with actual SCI Token contract address
+const PRIVATE_KEY =
+  '0xe1119699c0f01f7e18a6653be970854396692a00b5d188ab2373ec5fc6157696'; // Replace with your private key (ensure this is securely stored and not hard-coded)
 
-const QrReceiveTurkishLira = ({navigation}) => {
+const QrReceiveSCI = ({navigation}) => {
   const [paymentData, setPaymentData] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const storeTransactionHistory = async transaction => {
-    try {
-      // Retrieve existing history from AsyncStorage
-      const existingHistory = await AsyncStorage.getItem('transaction_history');
-
-      // Parse the existing history or initialize an empty array if no history is found
-      const history = existingHistory ? JSON.parse(existingHistory) : [];
-
-      // Add the new transaction to the history array
-      history.push(transaction);
-
-      // Save the updated history back to AsyncStorage
-      await AsyncStorage.setItem(
-        'transaction_history',
-        JSON.stringify(history),
-      );
-
-      console.log('Transaction history updated.');
-    } catch (error) {
-      console.error('Error storing transaction history:', error);
-    }
-  };
 
   const handleScan = async e => {
     try {
@@ -44,13 +20,11 @@ const QrReceiveTurkishLira = ({navigation}) => {
       const {to, amount, tokenAddress} = data;
 
       if (tokenAddress !== TOKEN_ADDRESS) {
-        Alert.alert(
-          'Invalid Token',
-          'This QR code is not for the Turkish Lira Token.',
-        );
+        Alert.alert('Invalid Token', 'This QR code is not for the SCI Token.');
         return;
       }
 
+      // Set payment data and show confirmation dialog
       setPaymentData({to, amount});
       setIsModalVisible(true);
     } catch (error) {
@@ -59,23 +33,15 @@ const QrReceiveTurkishLira = ({navigation}) => {
   };
 
   const confirmPayment = async () => {
-    setIsModalVisible(false);
     if (!paymentData) return;
 
     const {to, amount} = paymentData;
     try {
-      // Retrieve the private key from encrypted storage
-      const privateKey = await EncryptedStorage.getItem('private_key');
-      if (!privateKey) {
-        Alert.alert('Error', 'Private key not found.');
-        return;
-      }
-
       // Setup Ethereum provider and wallet
-      const provider = new ethers.JsonRpcProvider('https://chain.scimatic.net');
-      const wallet = new ethers.Wallet(privateKey, provider);
+      const provider = new ethers.JsonRpcProvider('https://chain.scimatic.net'); // Ensure this is a valid RPC URL for SCI
+      const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-      // Create a contract instance for the Turkish Lira Token
+      // Create a contract instance for the SCI Token
       const tokenContract = new ethers.Contract(
         TOKEN_ADDRESS,
         erc20Abi,
@@ -88,40 +54,20 @@ const QrReceiveTurkishLira = ({navigation}) => {
 
       // Perform the token transfer
       const tx = await tokenContract.transfer(to, amountInUnits);
+      await tx.wait();
 
-      // Wait for the transaction to be mined and get the receipt
-      const receipt = await tx.wait();
-
-      // Log the entire receipt to check its structure
-      console.log('Transaction Receipt:', receipt);
-
-      // After success, store the transaction in history
-      const newTransaction = {
-        to,
-        amount,
-        date: formatter.format(new Date()),
-        transactionHash: receipt.hash || 'Not Available', // Use receipt.hash for transaction hash
-      };
-
-      await storeTransactionHistory(newTransaction);
-
-      // Navigate to success page and show alert
+      // Navigate to Success screen
       navigation.navigate('Success');
-      Alert.alert(
-        'Success',
-        `Successfully transferred ${amount} Turkish Lira Token to ${to}. Transaction Hash: ${
-          receipt.hash || 'Not Available'
-        }`,
-      );
+      Alert.alert('Success', `Successfully transferred ${amount} SCI to ${to}`);
     } catch (error) {
       Alert.alert('Error', `Failed to process the payment: ${error.message}`);
     } finally {
-      setIsModalVisible(false);
+      setIsModalVisible(false); // Hide the confirmation modal
     }
   };
 
   const cancelPayment = () => {
-    setIsModalVisible(false);
+    setIsModalVisible(false); // Hide the confirmation modal
   };
 
   return (
@@ -134,24 +80,23 @@ const QrReceiveTurkishLira = ({navigation}) => {
       <QRCodeScanner
         onRead={handleScan}
         topContent={
-          <Text style={styles.centerText}>
-            Scan the QR code to receive Turkish Lira Token
-          </Text>
+          <Text style={styles.centerText}>Scan the QR code to receive SCI</Text>
         }
         bottomContent={
           <Text style={styles.buttonText}>
-            Make sure the QR code is for Turkish Lira Token
+            Make sure the QR code is for SCI Coin
           </Text>
         }
       />
 
+      {/* Confirmation Modal */}
       <Modal transparent={true} visible={isModalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirm Payment</Text>
             <Text style={styles.modalText}>
-              Are you sure you want to transfer {paymentData?.amount} Turkish
-              Lira Token to {paymentData?.to}?
+              Are you sure you want to transfer {paymentData?.amount} SCI to{' '}
+              {paymentData?.to}?
             </Text>
             <View style={styles.modalButtons}>
               <Pressable style={styles.modalButton} onPress={confirmPayment}>
@@ -231,4 +176,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default QrReceiveTurkishLira;
+export default QrReceiveSCI;

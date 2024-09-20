@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import Ionicons from '@react-native-vector-icons/ionicons';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import Header from '../components/Header';
 
 const LoginPage = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Loading state
 
   const storeCredentials = async (username, password) => {
     try {
@@ -28,10 +31,19 @@ const LoginPage = ({navigation}) => {
     } catch (error) {
       console.log('Error storing credentials:', error);
       Alert.alert('Error', 'Failed to store credentials');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Input Error', 'Please enter both username and password.');
+      return;
+    }
+
+    setIsLoading(true); // Start loading
+
     const correctUsername = 'admin';
     const correctPassword = 'password123';
 
@@ -65,7 +77,10 @@ const LoginPage = ({navigation}) => {
     } else {
       Alert.alert('Login Failed', 'Incorrect username or password');
     }
+
+    setIsLoading(false); // Stop loading after processing
   };
+
   return (
     <View style={styles.container}>
       <Header
@@ -74,31 +89,46 @@ const LoginPage = ({navigation}) => {
       />
       <View style={styles.section}>
         <Text style={styles.label}>Username:</Text>
-        <TextInput
-          value={username}
-          onChangeText={setUsername}
-          placeholder="Enter your username"
-          style={styles.input}
-        />
+        <View style={styles.inputWrapper}>
+          <Ionicons name="person-outline" size={24} color="#654321" />
+          <TextInput
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Enter your username"
+            style={styles.input}
+            placeholderTextColor="#777"
+          />
+        </View>
 
         <Text style={styles.label}>Password:</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          secureTextEntry
-          style={styles.input}
-        />
+        <View style={styles.inputWrapper}>
+          <Ionicons name="lock-closed-outline" size={24} color="#654321" />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            secureTextEntry
+            style={styles.input}
+            placeholderTextColor="#777"
+          />
+        </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login / Create Account</Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.disabledButton]}
+          onPress={handleLogin}
+          disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#654321" />
+          ) : (
+            <Text style={styles.buttonText}>Login / Create Account</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-// Styles to match the Home screen's theme
+// Updated styles for better UX
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -115,19 +145,32 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#654321', // Brownish color similar to the Home screen
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEEEAA', // Light yellow background for inputs
     width: '80%',
-    padding: 10,
     borderWidth: 1,
     borderColor: '#654321',
     borderRadius: 20,
-    backgroundColor: '#EEEEAA', // Light yellow background for inputs
     marginBottom: 20,
+    paddingHorizontal: 10,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    fontSize: 16,
+    color: '#654321',
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
   },
   button: {
     backgroundColor: '#EEEEAA',
@@ -141,6 +184,9 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#CCCCCC', // Grayish color for disabled button
   },
   buttonText: {
     fontSize: 20,

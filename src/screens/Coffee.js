@@ -1,6 +1,6 @@
 import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import React from 'react';
-import Header from "../components/Header.js"
+import Header from '../components/Header.js';
 
 const Coffee = ({navigation}) => {
   const handleBuy = () => {
@@ -10,21 +10,21 @@ const Coffee = ({navigation}) => {
     });
   };
   return (
-  <View>
-  <Header
-          title={'QR Code Payment System'}
-          icon={require('../images/back.png')}
-          onPress={() => navigation.goBack()}
-        />
     <View style={styles.container}>
-      <Text style={styles.coffeeSign}>Coffee</Text>
-      <Image
-        style={styles.coffeePng}
-        source={require('../images/coffee.png')}></Image>
-      <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
-        <Text style={styles.buyText}>BUY 10 TRYS</Text>
-      </TouchableOpacity>
-    </View>
+      <Header
+        title={'QR Code Payment System'}
+        icon={require('../images/back.png')}
+        onPress={() => navigation.goBack()}
+      />
+      <View style={styles.container}>
+        <Text style={styles.coffeeSign}>Coffee</Text>
+        <Image
+          style={styles.coffeePng}
+          source={require('../images/coffee.png')}></Image>
+        <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
+          <Text style={styles.buyText}>BUY 10 TRYS</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -15,18 +15,17 @@ import {ethers} from 'ethers';
 import Header from '../components/Header';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {convertCommaToDot} from '../utils/numberUtils.js';
-import Icon from '@react-native-vector-icons/ionicons';
 
-const TOKEN_ADDRESS = '0xbf9dAAe19dd4E346C9feC4aD4D2379ec632c05e1';
-const TOKEN_SYMBOL = 'TRY';
-
-const QrSendTurkishLira = ({navigation, route}) => {
+// SCI Token Address
+const TOKEN_SYMBOL = 'SCI'; // SCI Coin Symbol
+const SCI_DECIMALS = 18; // Usually ERC20 tokens have 18 decimals, adjust if needed
+const private_key =
+  '0xe1119699c0f01f7e18a6653be970854396692a00b5d188ab2373ec5fc6157696';
+const QrSendSciCoin = ({navigation, route}) => {
   const {recipientAddress: initialRecipientAddress, amount: initialAmount} =
     route.params || {};
 
-  const [recipientAddress, setRecipientAddress] = useState(
-    initialRecipientAddress || '',
-  );
+  const [target, setRecipientAddress] = useState(initialRecipientAddress || '');
   const [amount, setAmount] = useState(initialAmount || '');
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
   const [qrCodeData, setQRCodeData] = useState('');
@@ -39,7 +38,7 @@ const QrSendTurkishLira = ({navigation, route}) => {
   }, [initialRecipientAddress, initialAmount]);
 
   const validateInputs = () => {
-    if (!ethers.isAddress(recipientAddress)) {
+    if (!ethers.isAddress(target)) {
       Alert.alert('Invalid Address', 'Please enter a valid recipient address.');
       return false;
     }
@@ -57,7 +56,7 @@ const QrSendTurkishLira = ({navigation, route}) => {
     const paymentData = JSON.stringify({
       to: recipientAddress,
       amount: amount,
-      tokenAddress: TOKEN_ADDRESS,
+      tokenAddress: target,
       tokenSymbol: TOKEN_SYMBOL,
     });
 
@@ -67,16 +66,21 @@ const QrSendTurkishLira = ({navigation, route}) => {
 
   const onScanSuccess = e => {
     try {
-      // Parse the JSON data from the QR code
-      const data = JSON.parse(e.data);
-      // Extract the 'to' field from the parsed data
-      if (ethers.isAddress(data.to)) {
-        setRecipientAddress(data.to);
+      // First, try to treat the scanned data as a valid Ethereum address
+      if (ethers.isAddress(e.data)) {
+        setRecipientAddress(e.data);
       } else {
-        Alert.alert(
-          'Invalid Data',
-          'QR code does not contain a valid address.',
-        );
+        // If it's not a valid address, try to parse it as JSON (in case it's a more complex QR code)
+        const data = JSON.parse(e.data);
+
+        if (ethers.isAddress(data.to)) {
+          setRecipientAddress(data.to);
+        } else {
+          Alert.alert(
+            'Invalid Data',
+            'QR code does not contain a valid address.',
+          );
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to parse QR code data.');
@@ -90,25 +94,58 @@ const QrSendTurkishLira = ({navigation, route}) => {
     setAmount(formattedAmount);
   };
 
+  // Function to send SCI coins
+  const sendSciCoins = async () => {
+    if (!validateInputs()) return;
+
+    try {
+      const provider = new ethers.JsonRpcProvider('https://chain.scimatic.net');
+      const wallet = new ethers.Wallet(private_key, provider);
+
+      // Create contract instance for SCI token
+      const sciTokenContract = new ethers.Contract(
+        target, // This should be the token address
+        ['function transfer(address to, uint256 amount) public returns (bool)'], // Ensure the ABI is correct
+        wallet, // Use the wallet with the private key
+      );
+
+      // Convert amount to SCI's decimal units
+      const amountInUnits = ethers.parseUnits(amount, SCI_DECIMALS);
+
+      // Send SCI tokens
+      const transaction = await sciTokenContract.transfer(
+        target, // This should be the recipient address
+        amountInUnits,
+      );
+
+      // Wait for transaction to be mined
+      await transaction.wait();
+
+      // Log transaction hash for confirmation
+      console.log('Transaction hash:', transaction.hash);
+
+      // Show success alert
+      Alert.alert('Success', `Transaction sent. Hash: ${transaction.hash}`);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      Alert.alert('Error', 'Transaction failed. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Header
-        title={'QR Code Payment System'}
+        title={'SCI Coin Payment System'}
         icon={require('../images/back.png')}
         onPress={() => navigation.goBack()}
       />
-
-      {/* Instruction Text */}
-      <Text style={styles.instructionText}>
-        To send money, you should create a QR code.
-      </Text>
 
       <View style={styles.section}>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Recipient Address"
-            value={recipientAddress}
+            value={target}
             onChangeText={setRecipientAddress}
             autoCapitalize="none"
           />
@@ -117,23 +154,23 @@ const QrSendTurkishLira = ({navigation, route}) => {
           <TouchableOpacity
             style={styles.qrIcon}
             onPress={() => setIsScanningQR(true)}>
-            <Icon ></Icon>
+            <Image
+              style={{height: 24, width: 24}}
+              source={require('../images/qr-code.256x256.png')}
+            />
           </TouchableOpacity>
         </View>
 
         <TextInput
           style={styles.input}
-          placeholder="Amount (TL)"
+          placeholder="Amount (SCI)"
           value={amount}
           onChangeText={handleAmountChange}
           keyboardType="numeric"
         />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={generateQRCode}
-          disabled={isGeneratingQR}>
-          <Text style={styles.buttonText}>Generate QR Code</Text>
+        <TouchableOpacity style={styles.button} onPress={sendSciCoins}>
+          <Text style={styles.buttonText}>Transfer SCI Coin</Text>
         </TouchableOpacity>
 
         {isGeneratingQR && (
@@ -170,12 +207,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#90EE90',
-  },
-  instructionText: {
-    fontSize: 30,
-    textAlign: 'center',
-    fontWeight: '700',
-    marginTop: 50,
   },
   section: {
     marginTop: 200,
@@ -248,4 +279,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default QrSendTurkishLira;
+export default QrSendSciCoin;

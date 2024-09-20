@@ -12,6 +12,9 @@ import Success from './screens/Success';
 import Coffee from './screens/Coffee';
 import Splash from './screens/Splash';
 import LoginPage from './screens/Login';
+import SciCoin from './screens/SciCoin';
+import QrSendSciCoin from './screens/QrSendSCICoin';
+import QrReceiveSCI from './screens/QrReceiveSCI';
 
 const Stack = createStackNavigator();
 
@@ -72,6 +75,16 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Coffee"
           component={Coffee}
+          options={{headerShown: false}} // Hide the header
+        />
+        <Stack.Screen
+          name="QrSendSciCoin"
+          component={QrSendSciCoin}
+          options={{headerShown: false}} // Hide the header
+        />
+        <Stack.Screen
+          name="QrReceiveSciCoin"
+          component={QrReceiveSCI}
           options={{headerShown: false}} // Hide the header
         />
       </Stack.Navigator>
